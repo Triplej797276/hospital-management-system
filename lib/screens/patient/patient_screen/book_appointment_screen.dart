@@ -1,16 +1,15 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
+import '../../../controllers/patients/book_appointment_controller.dart';
 
 class BookAppointmentScreen extends StatelessWidget {
   const BookAppointmentScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final TextEditingController doctorController = TextEditingController();
-    final TextEditingController dateController = TextEditingController();
-    final TextEditingController timeController = TextEditingController();
+    // Initialize the controller
+    final BookAppointmentController controller = Get.put(BookAppointmentController());
 
     return Scaffold(
       appBar: AppBar(
@@ -27,7 +26,7 @@ class BookAppointmentScreen extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             TextField(
-              controller: doctorController,
+              controller: controller.doctorController,
               decoration: const InputDecoration(
                 labelText: 'Doctor Name',
                 border: OutlineInputBorder(),
@@ -35,7 +34,7 @@ class BookAppointmentScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             TextField(
-              controller: dateController,
+              controller: controller.dateController,
               decoration: const InputDecoration(
                 labelText: 'Date (YYYY-MM-DD)',
                 border: OutlineInputBorder(),
@@ -43,7 +42,7 @@ class BookAppointmentScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             TextField(
-              controller: timeController,
+              controller: controller.timeController,
               decoration: const InputDecoration(
                 labelText: 'Time (HH:MM)',
                 border: OutlineInputBorder(),
@@ -51,24 +50,7 @@ class BookAppointmentScreen extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () async {
-                try {
-                  final user = FirebaseAuth.instance.currentUser;
-                  if (user != null) {
-                    await FirebaseFirestore.instance.collection('appointments').add({
-                      'patientId': user.uid,
-                      'doctorName': doctorController.text,
-                      'date': dateController.text,
-                      'time': timeController.text,
-                      'createdAt': Timestamp.now(),
-                    });
-                    Get.snackbar('Success', 'Appointment booked successfully');
-                    Get.back(); // Return to PatientDashboardScreen
-                  }
-                } catch (e) {
-                  Get.snackbar('Error', 'Failed to book appointment');
-                }
-              },
+              onPressed: controller.bookAppointment,
               child: const Text('Submit Appointment'),
             ),
           ],

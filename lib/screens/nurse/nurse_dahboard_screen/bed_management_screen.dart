@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import 'package:hsmproject/controllers/auth_controller.dart';
+
+import '../../../controllers/nurse/nurse_bed_management_controller.dart';
 
 class NurseBedManagementScreen extends StatelessWidget {
   const NurseBedManagementScreen({super.key});
@@ -8,6 +11,11 @@ class NurseBedManagementScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AuthController authController = Get.find<AuthController>();
+    final NurseBedManagementController bedController =
+        Get.put(NurseBedManagementController());
+    final TextEditingController bedNumberController = TextEditingController();
+    final TextEditingController bedTypeController = TextEditingController();
+    final TextEditingController wardController = TextEditingController();
 
     return Scaffold(
       appBar: AppBar(
@@ -41,25 +49,140 @@ class NurseBedManagementScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    children: [
+                      TextField(
+                        controller: bedNumberController,
+                        decoration: const InputDecoration(
+                          labelText: 'New Bed Number',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: bedTypeController,
+                        decoration: const InputDecoration(
+                          labelText: 'Bed Type (e.g., ICU, General)',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: wardController,
+                        decoration: const InputDecoration(
+                          labelText: 'Ward (e.g., ICU, General Ward)',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0077B6),
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: () {
+                    if (bedNumberController.text.isNotEmpty &&
+                        bedTypeController.text.isNotEmpty &&
+                        wardController.text.isNotEmpty) {
+                      bedController.addBed(
+                        bedNumberController.text,
+                        bedTypeController.text,
+                        wardController.text,
+                      );
+                      bedNumberController.clear();
+                      bedTypeController.clear();
+                      wardController.clear();
+                    } else {
+                      Get.snackbar('Error', 'Please fill all fields',
+                          snackPosition: SnackPosition.BOTTOM,
+                          backgroundColor: Colors.red,
+                          colorText: Colors.white);
+                    }
+                  },
+                  child: const Text('Add Bed'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
             Expanded(
-              child: ListView(
-                children: [
-                  _buildBedCard(
-                    bedNumber: 'Bed 01',
-                    status: 'Occupied',
-                    patient: 'John Doe',
+              child: Obx(
+                () => SingleChildScrollView(
+                  scrollDirection: Axis.vertical,
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: DataTable(
+                      columns: const [
+                        DataColumn(
+                            label: Text('Bed Number',
+                                style: TextStyle(fontWeight: FontWeight.bold))),
+                        DataColumn(
+                            label: Text('Status',
+                                style: TextStyle(fontWeight: FontWeight.bold))),
+                        DataColumn(
+                            label: Text('Patient',
+                                style: TextStyle(fontWeight: FontWeight.bold))),
+                        DataColumn(
+                            label: Text('Bed Type',
+                                style: TextStyle(fontWeight: FontWeight.bold))),
+                        DataColumn(
+                            label: Text('Ward',
+                                style: TextStyle(fontWeight: FontWeight.bold))),
+                        DataColumn(
+                            label: Text('Last Cleaned',
+                                style: TextStyle(fontWeight: FontWeight.bold))),
+                        DataColumn(
+                            label: Text('Actions',
+                                style: TextStyle(fontWeight: FontWeight.bold))),
+                      ],
+                      rows: bedController.beds.map((bed) {
+                        final lastCleaned = bed.lastCleaned != null
+                            ? DateFormat('yyyy-MM-dd HH:mm')
+                                .format(bed.lastCleaned!.toDate())
+                            : 'Not cleaned';
+                        return DataRow(cells: [
+                          DataCell(Text(bed.bedNumber)),
+                          DataCell(Text(bed.status)),
+                          DataCell(Text(bed.patient)),
+                          DataCell(Text(bed.bedType)),
+                          DataCell(Text(bed.ward)),
+                          DataCell(Text(lastCleaned)),
+                          DataCell(
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.cleaning_services,
+                                      color: Colors.green),
+                                  onPressed: () {
+                                    bedController.markBedAsCleaned(bed.id);
+                                  },
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.edit, color: Colors.blue),
+                                  onPressed: () {
+                                    _showUpdateDialog(context, bed, bedController);
+                                  },
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete, color: Colors.red),
+                                  onPressed: () {
+                                    bedController.deleteBed(bed.id);
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        ]);
+                      }).toList(),
+                    ),
                   ),
-                  _buildBedCard(
-                    bedNumber: 'Bed 02',
-                    status: 'Available',
-                    patient: 'None',
-                  ),
-                  _buildBedCard(
-                    bedNumber: 'Bed 03',
-                    status: 'Occupied',
-                    patient: 'Jane Smith',
-                  ),
-                ],
+                ),
               ),
             ),
             Center(
@@ -67,7 +190,8 @@ class NurseBedManagementScreen extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF0077B6),
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -87,19 +211,83 @@ class NurseBedManagementScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBedCard({required String bedNumber, required String status, required String patient}) {
-    return Card(
-      elevation: 3,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      child: ListTile(
-        leading: const Icon(Icons.bed, color: Color(0xFF0077B6)),
-        title: Text(
-          bedNumber,
-          style: const TextStyle(fontWeight: FontWeight.w500),
+  void _showUpdateDialog(
+      BuildContext context, Bed bed, NurseBedManagementController controller) {
+    final TextEditingController patientController =
+        TextEditingController(text: bed.patient);
+    final TextEditingController bedTypeController =
+        TextEditingController(text: bed.bedType);
+    final TextEditingController wardController =
+        TextEditingController(text: bed.ward);
+    String status = bed.status;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Update ${bed.bedNumber}'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: patientController,
+                decoration: const InputDecoration(labelText: 'Patient Name'),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: bedTypeController,
+                decoration:
+                    const InputDecoration(labelText: 'Bed Type (e.g., ICU, General)'),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: wardController,
+                decoration:
+                    const InputDecoration(labelText: 'Ward (e.g., ICU, General Ward)'),
+              ),
+              const SizedBox(height: 10),
+              DropdownButton<String>(
+                value: status,
+                items: ['Available', 'Occupied']
+                    .map((status) => DropdownMenuItem(
+                          value: status,
+                          child: Text(status),
+                        ))
+                    .toList(),
+                onChanged: (value) {
+                  if (value != null) {
+                    status = value;
+                  }
+                },
+              ),
+            ],
+          ),
         ),
-        subtitle: Text('Status: $status\nPatient: $patient'),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              controller.updateBed(Bed(
+                id: bed.id,
+                bedNumber: bed.bedNumber,
+                status: status,
+                patient: patientController.text.isEmpty
+                    ? 'None'
+                    : patientController.text,
+                bedType: bedTypeController.text.isEmpty
+                    ? bed.bedType
+                    : bedTypeController.text,
+                ward: wardController.text.isEmpty ? bed.ward : wardController.text,
+                lastCleaned: bed.lastCleaned,
+              ));
+              Navigator.pop(context);
+            },
+            child: const Text('Update'),
+          ),
+        ],
       ),
     );
   }

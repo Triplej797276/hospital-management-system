@@ -1,3 +1,4 @@
+// NurseLoginScreen.dart
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -10,9 +11,13 @@ class NurseLoginController extends GetxController {
   bool get isLoading => _isLoading.value;
   void toggleLoading(bool value) => _isLoading.value = value;
 
+  final RxString _nurseName = ''.obs;
+  String get nurseName => _nurseName.value;
+  void setNurseName(String name) => _nurseName.value = name;
+
   @override
   void onClose() {
-    _isLoading.close(); // Dispose of RxBool
+    _isLoading.close();
     super.onClose();
   }
 }
@@ -26,22 +31,21 @@ class NurseLoginScreen extends StatelessWidget {
   final NurseLoginController _controller = Get.put(NurseLoginController());
 
   Future<void> _signInNurse() async {
-    if (_controller.isLoading) return; // Prevent multiple submissions
+    if (_controller.isLoading) return;
     if (_formKey.currentState!.validate()) {
       _controller.toggleLoading(true);
       try {
-        // Sign in with Firebase Auth
+        // Firebase Auth Sign-in
         await FirebaseAuth.instance.signInWithEmailAndPassword(
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
         );
 
-       
-
-        // Verify nurse exists in Firestore
+        // Verify nurse in Firestore
         final nurseSnapshot = await FirebaseFirestore.instance
             .collection('nurses')
             .where('email', isEqualTo: _emailController.text.trim())
+            .limit(1)
             .get();
 
         if (nurseSnapshot.docs.isEmpty) {
@@ -50,6 +54,12 @@ class NurseLoginScreen extends StatelessWidget {
           await FirebaseAuth.instance.signOut();
           return;
         }
+
+        final nurseDoc = nurseSnapshot.docs.first;
+        final nurseData = nurseDoc.data();
+        final nurseName = nurseData['name']?.toString() ?? 'Unknown Nurse';
+
+        _controller.setNurseName(nurseName);
 
         Get.snackbar('Success', 'Nurse logged in successfully',
             snackPosition: SnackPosition.BOTTOM);
@@ -71,7 +81,6 @@ class NurseLoginScreen extends StatelessWidget {
         }
         Get.snackbar('Error', errorMessage, snackPosition: SnackPosition.BOTTOM);
       } on FirebaseException catch (e) {
-        // Handle Firestore-specific errors
         if (e.code == 'permission-denied') {
           Get.snackbar('Error', 'Access denied. Please contact support.',
               snackPosition: SnackPosition.BOTTOM);
@@ -92,73 +101,144 @@ class NurseLoginScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.blue[50], // ✅ Consistent theme
       appBar: AppBar(
-        title: const Text('Nurse Login'),
-        backgroundColor: Colors.cyan,
-        titleTextStyle: const TextStyle(
-          color: Colors.white,
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
+        title: const Text(
+          'Nurse Login',
+          style: TextStyle(color: Colors.white),
         ),
+        backgroundColor: Colors.blueAccent,
+        elevation: 2,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              TextFormField(
-                controller: _emailController,
-                decoration: const InputDecoration(labelText: 'Email'),
-                keyboardType: TextInputType.emailAddress,
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter an email';
-                  }
-                  if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                    return 'Please enter a valid email';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _passwordController,
-                decoration: const InputDecoration(labelText: 'Password'),
-                obscureText: true,
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter a password';
-                  }
-                  if (value.length < 6) {
-                    return 'Password must be at least 6 characters';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 20),
-              Obx(
-                () => ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.cyan,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-                  ),
-                  onPressed: _controller.isLoading ? null : _signInNurse,
-                  child: _controller.isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text('Nurse Login'),
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20.0),
+          child: Card(
+            elevation: 8,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.local_hospital,
+                        // If Icons.nursing not available, use Icons.local_hospital
+                        size: 80, color: Colors.blueAccent),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Nurse Portal',
+                      style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blueAccent,
+                      ),
+                    ),
+                    const SizedBox(height: 30),
+
+                    // Email
+                    TextFormField(
+                      controller: _emailController,
+                      decoration: InputDecoration(
+                        labelText: 'Email',
+                        prefixIcon:
+                            const Icon(Icons.email, color: Colors.blueAccent),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: const BorderSide(
+                              color: Colors.blueAccent, width: 2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Please enter an email';
+                        }
+                        if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                            .hasMatch(value)) {
+                          return 'Please enter a valid email';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Password
+                    TextFormField(
+                      controller: _passwordController,
+                      decoration: InputDecoration(
+                        labelText: 'Password',
+                        prefixIcon:
+                            const Icon(Icons.lock, color: Colors.blueAccent),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: const BorderSide(
+                              color: Colors.blueAccent, width: 2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      obscureText: true,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Please enter a password';
+                        }
+                        if (value.length < 6) {
+                          return 'Password must be at least 6 characters';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Login Button
+                    Obx(() => _controller.isLoading
+                        ? const CircularProgressIndicator(
+                            color: Colors.blueAccent,
+                          )
+                        : SizedBox(
+                            width: double.infinity,
+                            height: 50,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blueAccent,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              onPressed: _signInNurse,
+                              child: const Text(
+                                'Sign In as Nurse',
+                                style: TextStyle(fontSize: 18),
+                              ),
+                            ),
+                          )),
+                    const SizedBox(height: 16),
+
+                    // Create Account
+                    TextButton(
+                      onPressed: () =>
+                          Get.to(() => const AddNurseScreen()),
+                      child: const Text(
+                        'Create Nurse Account',
+                        style: TextStyle(
+                            color: Colors.blueAccent,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 20),
-              TextButton(
-                onPressed: () => Get.to(() => const AddNurseScreen()),
-                child: const Text(
-                  'Don’t have an account? Register as Nurse',
-                  style: TextStyle(color: Colors.cyan),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),

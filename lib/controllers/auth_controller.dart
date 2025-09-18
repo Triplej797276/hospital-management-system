@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hsmproject/screens/home_screen.dart';
 import 'package:hsmproject/screens/doctor/dashboard_screen.dart';
@@ -8,9 +9,10 @@ import 'package:hsmproject/screens/accountant/accountant_dashboard_screen.dart';
 import 'package:hsmproject/screens/laboratorist/laboratorist_dashboard_screen.dart';
 import 'package:hsmproject/screens/pharmacist/pharmacist_dashboard_screen.dart';
 import 'package:hsmproject/screens/nurse/nurse_dashboard_screen.dart';
-import 'package:hsmproject/screens/patient/patient_dashboard_screen.dart';
 import 'package:hsmproject/screens/case_manager/case_manager_dashboard_screen.dart';
 import 'package:hsmproject/screens/role_selection_screen.dart';
+
+import '../screens/patient/patient_dashboard_screen.dart';
 
 class AuthController extends GetxController {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -37,14 +39,12 @@ class AuthController extends GetxController {
 
   Future<void> signIn(String email, String password, String role) async {
     try {
-      // Validate email
       if (email.isEmpty ||
           !RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
         Get.snackbar('Error', 'Please enter a valid email address');
         return;
       }
 
-      // Validate password based on role
       if (role == 'receptionist' ||
           role == 'laboratorist' ||
           role == 'pharmacist' ||
@@ -58,20 +58,13 @@ class AuthController extends GetxController {
           Get.snackbar('Error', 'Password must be at least 6 digits');
           return;
         }
-      } else if (role == 'patient') {
-        // Allow any format for patient contact number (used as password)
-        if (password.isEmpty || password.length < 10) {
-          Get.snackbar('Error', 'Contact number must be at least 10 characters');
-          return;
-        }
-      } else {
+      } else if (role != 'patient') {
         if (password.isEmpty || password.length < 6) {
           Get.snackbar('Error', 'Password must be at least 6 characters');
           return;
         }
       }
 
-      // Check login attempts
       if (loginAttempts >= 3) {
         Get.snackbar('Error', 'Too many login attempts. Please try again later.');
         return;
@@ -101,7 +94,6 @@ class AuthController extends GetxController {
         Get.snackbar('Error', 'Failed to retrieve user information after sign-in');
       }
     } on FirebaseAuthException catch (e) {
-      print('FirebaseAuthException: code=${e.code}, message=${e.message}');
       String errorMessage;
       switch (e.code) {
         case 'invalid-email':
@@ -121,27 +113,48 @@ class AuthController extends GetxController {
       }
       Get.snackbar('Sign-In Error', errorMessage);
     } catch (e) {
-      print('General error: $e');
       Get.snackbar('Sign-In Error', 'Failed to sign in: ${e.toString()}');
     } finally {
       isLoading.value = false;
     }
   }
 
-  Future<void> registerDoctor(String email, String password, String name) async {
+  Future<void> registerUser({
+    required String email,
+    required String password,
+    required String name,
+    required String role,
+    required String collection,
+    Map<String, dynamic>? additionalData,
+  }) async {
     try {
       if (email.isEmpty ||
           !RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
         Get.snackbar('Error', 'Please enter a valid email address');
         return;
       }
-      if (password.isEmpty || password.length < 6) {
-        Get.snackbar('Error', 'Password must be at least 6 characters');
-        return;
-      }
       if (name.isEmpty) {
         Get.snackbar('Error', 'Please enter your full name');
         return;
+      }
+      if (role == 'receptionist' ||
+          role == 'laboratorist' ||
+          role == 'pharmacist' ||
+          role == 'nurse' ||
+          role == 'case_manager') {
+        if (password.isEmpty || !RegExp(r'^\d+$').hasMatch(password)) {
+          Get.snackbar('Error', 'Password must contain only numbers');
+          return;
+        }
+        if (password.length < 6) {
+          Get.snackbar('Error', 'Password must be at least 6 digits');
+          return;
+        }
+      } else if (role != 'patient') {
+        if (password.isEmpty || password.length < 6) {
+          Get.snackbar('Error', 'Password must be at least 6 characters');
+          return;
+        }
       }
 
       isLoading.value = true;
@@ -150,21 +163,26 @@ class AuthController extends GetxController {
         password: password,
       );
       User? firebaseUser = userCredential.user;
+
       if (firebaseUser != null) {
-        await _firestore.collection('doctors').doc(firebaseUser.uid).set({
+        Map<String, dynamic> userData = {
           'email': email.trim().toLowerCase(),
           'name': name,
-          'role': 'doctor',
+          'role': role,
           'createdAt': FieldValue.serverTimestamp(),
-        });
-        userRole.value = 'doctor';
+        };
+        if (additionalData != null) {
+          userData.addAll(additionalData);
+        }
+
+        await _firestore.collection(collection).doc(firebaseUser.uid).set(userData);
+        userRole.value = role;
         loginAttempts = 0;
         _navigateBasedOnRole();
       } else {
         Get.snackbar('Error', 'Failed to retrieve user information after registration');
       }
     } on FirebaseAuthException catch (e) {
-      print('FirebaseAuthException: code=${e.code}, message=${e.message}');
       String errorMessage;
       switch (e.code) {
         case 'email-already-in-use':
@@ -184,342 +202,6 @@ class AuthController extends GetxController {
       }
       Get.snackbar('Registration Error', errorMessage);
     } catch (e) {
-      print('General error: $e');
-      Get.snackbar('Registration Error', 'Failed to register: ${e.toString()}');
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
-  Future<void> registerReceptionist(String email, String password, String name) async {
-    try {
-      if (email.isEmpty ||
-          !RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
-        Get.snackbar('Error', 'Please enter a valid email address');
-        return;
-      }
-      if (password.isEmpty || !RegExp(r'^\d+$').hasMatch(password)) {
-        Get.snackbar('Error', 'Password must contain only numbers');
-        return;
-      }
-      if (password.length < 6) {
-        Get.snackbar('Error', 'Password must be at least 6 digits');
-        return;
-      }
-      if (name.isEmpty) {
-        Get.snackbar('Error', 'Please enter your full name');
-        return;
-      }
-
-      isLoading.value = true;
-      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
-        email: email.trim().toLowerCase(),
-        password: password,
-      );
-      User? firebaseUser = userCredential.user;
-      if (firebaseUser != null) {
-        await _firestore.collection('receptionists').doc(firebaseUser.uid).set({
-          'email': email.trim().toLowerCase(),
-          'name': name,
-          'role': 'receptionist',
-          'createdAt': FieldValue.serverTimestamp(),
-        });
-        userRole.value = 'receptionist';
-        loginAttempts = 0;
-        _navigateBasedOnRole();
-      } else {
-        Get.snackbar('Error', 'Failed to retrieve user information after registration');
-      }
-    } on FirebaseAuthException catch (e) {
-      print('FirebaseAuthException: code=${e.code}, message=${e.message}');
-      String errorMessage;
-      switch (e.code) {
-        case 'email-already-in-use':
-          errorMessage = 'The email address is already registered.';
-          break;
-        case 'invalid-email':
-          errorMessage = 'The email address is not valid.';
-          break;
-        case 'weak-password':
-          errorMessage = 'The password is too weak.';
-          break;
-        case 'operation-not-allowed':
-          errorMessage = 'Email/password accounts are not enabled.';
-          break;
-        default:
-          errorMessage = 'Failed to register: ${e.message}';
-      }
-      Get.snackbar('Registration Error', errorMessage);
-    } catch (e) {
-      print('General error: $e');
-      Get.snackbar('Registration Error', 'Failed to register: ${e.toString()}');
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
-  Future<void> registerLaboratorist(String email, String password, String name) async {
-    try {
-      if (email.isEmpty ||
-          !RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
-        Get.snackbar('Error', 'Please enter a valid email address');
-        return;
-      }
-      if (password.isEmpty || !RegExp(r'^\d+$').hasMatch(password)) {
-        Get.snackbar('Error', 'Password must contain only numbers');
-        return;
-      }
-      if (password.length < 6) {
-        Get.snackbar('Error', 'Password must be at least 6 digits');
-        return;
-      }
-      if (name.isEmpty) {
-        Get.snackbar('Error', 'Please enter your full name');
-        return;
-      }
-
-      isLoading.value = true;
-      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
-        email: email.trim().toLowerCase(),
-        password: password,
-      );
-      User? firebaseUser = userCredential.user;
-      if (firebaseUser != null) {
-        await _firestore.collection('laboratorists').doc(firebaseUser.uid).set({
-          'email': email.trim().toLowerCase(),
-          'name': name,
-          'role': 'laboratorist',
-          'createdAt': FieldValue.serverTimestamp(),
-        });
-        userRole.value = 'laboratorist';
-        loginAttempts = 0;
-        _navigateBasedOnRole();
-      } else {
-        Get.snackbar('Error', 'Failed to retrieve user information after registration');
-      }
-    } on FirebaseAuthException catch (e) {
-      print('FirebaseAuthException: code=${e.code}, message=${e.message}');
-      String errorMessage;
-      switch (e.code) {
-        case 'email-already-in-use':
-          errorMessage = 'The email address is already registered.';
-          break;
-        case 'invalid-email':
-          errorMessage = 'The email address is not valid.';
-          break;
-        case 'weak-password':
-          errorMessage = 'The password is too weak.';
-          break;
-        case 'operation-not-allowed':
-          errorMessage = 'Email/password accounts are not enabled.';
-          break;
-        default:
-          errorMessage = 'Failed to register: ${e.message}';
-      }
-      Get.snackbar('Registration Error', errorMessage);
-    } catch (e) {
-      print('General error: $e');
-      Get.snackbar('Registration Error', 'Failed to register: ${e.toString()}');
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
-  Future<void> registerPharmacist(String email, String password, String name) async {
-    try {
-      if (email.isEmpty ||
-          !RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
-        Get.snackbar('Error', 'Please enter a valid email address');
-        return;
-      }
-      if (password.isEmpty || !RegExp(r'^\d+$').hasMatch(password)) {
-        Get.snackbar('Error', 'Password must contain only numbers');
-        return;
-      }
-      if (password.length < 6) {
-        Get.snackbar('Error', 'Password must be at least 6 digits');
-        return;
-      }
-      if (name.isEmpty) {
-        Get.snackbar('Error', 'Please enter your full name');
-        return;
-      }
-
-      isLoading.value = true;
-      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
-        email: email.trim().toLowerCase(),
-        password: password,
-      );
-      User? firebaseUser = userCredential.user;
-      if (firebaseUser != null) {
-        await _firestore.collection('pharmacists').doc(firebaseUser.uid).set({
-          'email': email.trim().toLowerCase(),
-          'name': name,
-          'role': 'pharmacist',
-          'createdAt': FieldValue.serverTimestamp(),
-        });
-        userRole.value = 'pharmacist';
-        loginAttempts = 0;
-        _navigateBasedOnRole();
-      } else {
-        Get.snackbar('Error', 'Failed to retrieve user information after registration');
-      }
-    } on FirebaseAuthException catch (e) {
-      print('FirebaseAuthException: code=${e.code}, message=${e.message}');
-      String errorMessage;
-      switch (e.code) {
-        case 'email-already-in-use':
-          errorMessage = 'The email address is already registered.';
-          break;
-        case 'invalid-email':
-          errorMessage = 'The email address is not valid.';
-          break;
-        case 'weak-password':
-          errorMessage = 'The password is too weak.';
-          break;
-        case 'operation-not-allowed':
-          errorMessage = 'Email/password accounts are not enabled.';
-          break;
-        default:
-          errorMessage = 'Failed to register: ${e.message}';
-      }
-      Get.snackbar('Registration Error', errorMessage);
-    } catch (e) {
-      print('General error: $e');
-      Get.snackbar('Registration Error', 'Failed to register: ${e.toString()}');
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
-  Future<void> registerNurse(String email, String password, String name) async {
-    try {
-      if (email.isEmpty ||
-          !RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
-        Get.snackbar('Error', 'Please enter a valid email address');
-        return;
-      }
-      if (password.isEmpty || !RegExp(r'^\d+$').hasMatch(password)) {
-        Get.snackbar('Error', 'Password must contain only numbers');
-        return;
-      }
-      if (password.length < 6) {
-        Get.snackbar('Error', 'Password must be at least 6 digits');
-        return;
-      }
-      if (name.isEmpty) {
-        Get.snackbar('Error', 'Please enter your full name');
-        return;
-      }
-
-      isLoading.value = true;
-      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
-        email: email.trim().toLowerCase(),
-        password: password,
-      );
-      User? firebaseUser = userCredential.user;
-      if (firebaseUser != null) {
-        await _firestore.collection('nurses').doc(firebaseUser.uid).set({
-          'email': email.trim().toLowerCase(),
-          'name': name,
-          'role': 'nurse',
-          'createdAt': FieldValue.serverTimestamp(),
-        });
-        userRole.value = 'nurse';
-        loginAttempts = 0;
-        _navigateBasedOnRole();
-      } else {
-        Get.snackbar('Error', 'Failed to retrieve user information after registration');
-      }
-    } on FirebaseAuthException catch (e) {
-      print('FirebaseAuthException: code=${e.code}, message=${e.message}');
-      String errorMessage;
-      switch (e.code) {
-        case 'email-already-in-use':
-          errorMessage = 'The email address is already registered.';
-          break;
-        case 'invalid-email':
-          errorMessage = 'The email address is not valid.';
-          break;
-        case 'weak-password':
-          errorMessage = 'The password is too weak.';
-          break;
-        case 'operation-not-allowed':
-          errorMessage = 'Email/password accounts are not enabled.';
-          break;
-        default:
-          errorMessage = 'Failed to register: ${e.message}';
-      }
-      Get.snackbar('Registration Error', errorMessage);
-    } catch (e) {
-      print('General error: $e');
-      Get.snackbar('Registration Error', 'Failed to register: ${e.toString()}');
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
-  Future<void> registerCaseManager(String email, String password, String name) async {
-    try {
-      if (email.isEmpty ||
-          !RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
-        Get.snackbar('Error', 'Please enter a valid email address');
-        return;
-      }
-      if (password.isEmpty || !RegExp(r'^\d+$').hasMatch(password)) {
-        Get.snackbar('Error', 'Password must contain only numbers');
-        return;
-      }
-      if (password.length < 6) {
-        Get.snackbar('Error', 'Password must be at least 6 digits');
-        return;
-      }
-      if (name.isEmpty) {
-        Get.snackbar('Error', 'Please enter your full name');
-        return;
-      }
-
-      isLoading.value = true;
-      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
-        email: email.trim().toLowerCase(),
-        password: password,
-      );
-      User? firebaseUser = userCredential.user;
-      if (firebaseUser != null) {
-        await _firestore.collection('case_managers').doc(firebaseUser.uid).set({
-          'email': email.trim().toLowerCase(),
-          'name': name,
-          'role': 'case_manager',
-          'createdAt': FieldValue.serverTimestamp(),
-        });
-        userRole.value = 'case_manager';
-        loginAttempts = 0;
-        _navigateBasedOnRole();
-      } else {
-        Get.snackbar('Error', 'Failed to retrieve user information after registration');
-      }
-    } on FirebaseAuthException catch (e) {
-      print('FirebaseAuthException: code=${e.code}, message=${e.message}');
-      String errorMessage;
-      switch (e.code) {
-        case 'email-already-in-use':
-          errorMessage = 'The email address is already registered.';
-          break;
-        case 'invalid-email':
-          errorMessage = 'The email address is not valid.';
-          break;
-        case 'weak-password':
-          errorMessage = 'The password is too weak.';
-          break;
-        case 'operation-not-allowed':
-          errorMessage = 'Email/password accounts are not enabled.';
-          break;
-        default:
-          errorMessage = 'Failed to register: ${e.message}';
-      }
-      Get.snackbar('Registration Error', errorMessage);
-    } catch (e) {
-      print('General error: $e');
       Get.snackbar('Registration Error', 'Failed to register: ${e.toString()}');
     } finally {
       isLoading.value = false;
@@ -534,11 +216,6 @@ class AuthController extends GetxController {
       if (email == null) {
         userRole.value = '';
         Get.snackbar('Error', 'No email found for the current user');
-        return;
-      }
-
-      if (email == 'jayjadhav2507@gmail.com') {
-        userRole.value = 'admin';
         return;
       }
 
@@ -557,12 +234,10 @@ class AuthController extends GetxController {
       for (var entry in roleCollections.entries) {
         String role = entry.key;
         String collection = entry.value;
-        print('Checking collection: $collection for email: $email');
         QuerySnapshot querySnapshot = await _firestore
             .collection(collection)
             .where('email', isEqualTo: email)
             .get();
-        print('Found ${querySnapshot.docs.length} documents in $collection');
 
         if (querySnapshot.docs.isNotEmpty) {
           userRole.value = role;
@@ -573,15 +248,13 @@ class AuthController extends GetxController {
       userRole.value = '';
       Get.snackbar('Error', 'No role found for this user');
     } catch (e) {
-      print('Error fetching role: $e');
       userRole.value = '';
       Get.snackbar('Error', 'Failed to fetch user role: ${e.toString()}');
     }
   }
 
   void _navigateBasedOnRole() {
-    if (userRole.value.isNotEmpty) {
-      print('Navigating with role: ${userRole.value}');
+    if (userRole.value.isNotEmpty && Get.currentRoute != '/${userRole.value}_dashboard') {
       switch (userRole.value) {
         case 'admin':
           Get.offAll(() => HomeScreen());
@@ -614,7 +287,7 @@ class AuthController extends GetxController {
           Get.offAll(() => const RoleSelectionScreen());
           Get.snackbar('Role Error', 'Invalid role assigned');
       }
-    } else {
+    } else if (userRole.value.isEmpty) {
       Get.offAll(() => const RoleSelectionScreen());
       Get.snackbar('Role Error', 'Please select a role to continue');
     }
@@ -627,9 +300,7 @@ class AuthController extends GetxController {
       loginAttempts = 0;
       Get.offAll(() => const RoleSelectionScreen());
     } catch (e) {
-      print('Sign-out error: $e');
       Get.snackbar('Error', 'Failed to sign out: ${e.toString()}');
     }
   }
 }
-

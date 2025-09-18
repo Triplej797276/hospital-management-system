@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:hsmproject/screens/accountant/accountant_list_screen.dart';
+import 'package:hsmproject/screens/admin/accountant_list_screen.dart';
 import 'package:hsmproject/screens/doctor/dashboard_screen.dart';
 import 'package:hsmproject/screens/home_screen.dart';
 import '../controllers/auth_controller.dart';

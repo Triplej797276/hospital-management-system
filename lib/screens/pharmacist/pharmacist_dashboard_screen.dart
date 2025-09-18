@@ -2,44 +2,63 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hsmproject/controllers/auth_controller.dart';
 
+import '../../controllers/pharmacist/language_controller.dart';
+
 class PharmacistDashboardScreen extends StatelessWidget {
   const PharmacistDashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     final AuthController authController = Get.find<AuthController>();
+    final LanguageController langController = Get.put(LanguageController());
 
     return Scaffold(
       appBar: AppBar(
         title: Obx(() {
           final user = authController.user.value;
           final userName = user?.displayName ?? user?.email ?? 'Pharmacist';
-          return GestureDetector(
-            onTap: () => Get.toNamed('/profile'),
-            child: Row(
-              children: [
-                const CircleAvatar(
-                  radius: 16,
-                  backgroundColor: Colors.white,
-                  child: Icon(Icons.person, color: Colors.blue),
+          return Row(
+            children: [
+              const CircleAvatar(
+                radius: 16,
+                backgroundColor: Colors.white,
+                child: Icon(Icons.person, color: Colors.blue),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                userName,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  decoration: TextDecoration.underline,
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  userName,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    decoration: TextDecoration.underline,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           );
         }),
         backgroundColor: Colors.blue[800],
         foregroundColor: Colors.white,
-        elevation: 0,
         actions: [
+          Obx(() => DropdownButton<Language>(
+                value: langController.selectedLanguage.value,
+                dropdownColor: Colors.blue[800],
+                underline: const SizedBox(),
+                icon: const Icon(Icons.language, color: Colors.white),
+                items: const [
+                  DropdownMenuItem(
+                      value: Language.english,
+                      child: Text('English', style: TextStyle(color: Colors.white))),
+                  DropdownMenuItem(
+                      value: Language.marathi,
+                      child: Text('मराठी', style: TextStyle(color: Colors.white))),
+                  DropdownMenuItem(
+                      value: Language.hindi,
+                      child: Text('हिंदी', style: TextStyle(color: Colors.white))),
+                ],
+                onChanged: (val) {
+                  if (val != null) langController.changeLanguage(val);
+                },
+              )),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () => authController.signOut(),
@@ -69,54 +88,57 @@ class PharmacistDashboardScreen extends StatelessWidget {
                     child: Icon(Icons.medical_services, size: 40, color: Colors.blue),
                   ),
                   const SizedBox(height: 10),
-                  Text(
-                    'Pharmacist Portal',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    'Hospital Management System',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 14,
-                    ),
-                  ),
+                  Obx(() => Text(
+                        langController.getText(
+                            en: 'Pharmacist Portal',
+                            mr: 'फार्मासिस्ट पोर्टल',
+                            hi: 'फार्मासिस्ट पोर्टल'),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      )),
+                  Obx(() => Text(
+                        langController.getText(
+                            en: 'Hospital Management System',
+                            mr: 'रुग्णालय व्यवस्थापन प्रणाली',
+                            hi: 'अस्पताल प्रबंधन प्रणाली'),
+                        style: const TextStyle(color: Colors.white70, fontSize: 14),
+                      )),
                 ],
               ),
             ),
-            _buildDrawerItem(
-              icon: Icons.category,
-              title: 'Medicine Categories',
-              onTap: () => Get.toNamed('/pharmacist/medicine-categories'),
-            ),
-            _buildDrawerItem(
-              icon: Icons.medical_services,
-              title: 'Medicines',
-              onTap: () => Get.toNamed('/pharmacist/medicines'),
-            ),
-            _buildDrawerItem(
-              icon: Icons.receipt,
-              title: 'Medicine Bills',
-              onTap: () => Get.toNamed('/pharmacist/medicine-bills'),
-            ),
-            _buildDrawerItem(
-              icon: Icons.account_balance_wallet,
-              title: 'Payrolls',
-              onTap: () => Get.toNamed('/pharmacist/payrolls'),
-            ),
-            _buildDrawerItem(
-              icon: Icons.announcement,
-              title: 'Notices',
-              onTap: () => Get.toNamed('/notices'),
-            ),
-            _buildDrawerItem(
-              icon: Icons.person,
-              title: 'Profile',
-              onTap: () => Get.toNamed('/profile'),
-            ),
+            Obx(() => _buildDrawerItem(
+                  icon: Icons.category,
+                  title: langController.getText(
+                      en: 'Medicine Categories',
+                      mr: 'औषध श्रेण्या',
+                      hi: 'दवाइयों की श्रेणियाँ'),
+                  onTap: () => Get.toNamed('/pharmacist/medicine-categories'),
+                )),
+            Obx(() => _buildDrawerItem(
+                  icon: Icons.medical_services,
+                  title: langController.getText(
+                      en: 'Medicines', mr: 'औषधे', hi: 'दवाइयाँ'),
+                  onTap: () => Get.toNamed('/pharmacist/medicines'),
+                )),
+            Obx(() => _buildDrawerItem(
+                  icon: Icons.receipt,
+                  title: langController.getText(
+                      en: 'Medicine Bills', mr: 'औषध बिल', hi: 'दवा बिल'),
+                  onTap: () => Get.toNamed('/pharmacist/medicine-bills'),
+                )),
+            Obx(() => _buildDrawerItem(
+                  icon: Icons.announcement,
+                  title: langController.getText(en: 'Notices', mr: 'सूचना', hi: 'सूचनाएँ'),
+                  onTap: () => Get.toNamed('/notices'),
+                )),
+            Obx(() => _buildDrawerItem(
+                  icon: Icons.person,
+                  title: langController.getText(en: 'Profile', mr: 'प्रोफाइल', hi: 'प्रोफ़ाइल'),
+                  onTap: () => Get.toNamed('/pharmacist/profile'),
+                )),
           ],
         ),
       ),
@@ -156,63 +178,67 @@ class PharmacistDashboardScreen extends StatelessWidget {
                     const Icon(Icons.medical_services, color: Colors.white, size: 40),
                     const SizedBox(width: 16),
                     Expanded(
-                      child: Text(
-                        'Welcome to the Pharmacist Portal',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
+                      child: Obx(() => Text(
+                            langController.getText(
+                                en: 'Welcome to the Pharmacist Portal',
+                                mr: 'फार्मासिस्ट पोर्टल मध्ये आपले स्वागत आहे',
+                                hi: 'फार्मासिस्ट पोर्टल में आपका स्वागत है'),
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          )),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 24),
               Expanded(
-                child: GridView.count(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                  children: [
-                    _buildDashboardCard(
-                      context,
-                      title: 'Medicine Categories',
-                      icon: Icons.category,
-                      onTap: () => Get.toNamed('/pharmacist/medicine-categories'),
-                    ),
-                    _buildDashboardCard(
-                      context,
-                      title: 'Medicines',
-                      icon: Icons.medical_services,
-                      onTap: () => Get.toNamed('/pharmacist/medicines'),
-                    ),
-                    _buildDashboardCard(
-                      context,
-                      title: 'Medicine Bills',
-                      icon: Icons.receipt,
-                      onTap: () => Get.toNamed('/pharmacist/medicine-bills'),
-                    ),
-                    _buildDashboardCard(
-                      context,
-                      title: 'Payrolls',
-                      icon: Icons.account_balance_wallet,
-                      onTap: () => Get.toNamed('/pharmacist/payrolls'),
-                    ),
-                    _buildDashboardCard(
-                      context,
-                      title: 'Notices',
-                      icon: Icons.announcement,
-                      onTap: () => Get.toNamed('/notices'),
-                    ),
-                    _buildDashboardCard(
-                      context,
-                      title: 'Profile',
-                      icon: Icons.person,
-                      onTap: () => Get.toNamed('/profile'),
-                    ),
-                  ],
-                ),
+                child: Obx(() => GridView.count(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                      children: [
+                        _buildDashboardCard(
+                          context,
+                          title: langController.getText(
+                              en: 'Medicine Categories',
+                              mr: 'औषध श्रेण्या',
+                              hi: 'दवाइयों की श्रेणियाँ'),
+                          icon: Icons.category,
+                          onTap: () => Get.toNamed('/pharmacist/medicine-categories'),
+                        ),
+                        _buildDashboardCard(
+                          context,
+                          title: langController.getText(
+                              en: 'Medicines', mr: 'औषधे', hi: 'दवाइयाँ'),
+                          icon: Icons.medical_services,
+                          onTap: () => Get.toNamed('/pharmacist/medicines'),
+                        ),
+                        _buildDashboardCard(
+                          context,
+                          title: langController.getText(
+                              en: 'Medicine Bills', mr: 'औषध बिल', hi: 'दवा बिल'),
+                          icon: Icons.receipt,
+                          onTap: () => Get.toNamed('/pharmacist/medicine-bills'),
+                        ),
+                        _buildDashboardCard(
+                          context,
+                          title: langController.getText(
+                              en: 'Notices', mr: 'सूचना', hi: 'सूचनाएँ'),
+                          icon: Icons.announcement,
+                          onTap: () => Get.toNamed('/notices'),
+                        ),
+                        _buildDashboardCard(
+                          context,
+                          title: langController.getText(
+                              en: 'Profile', mr: 'प्रोफाइल', hi: 'प्रोफ़ाइल'),
+                          icon: Icons.person,
+                          onTap: () => Get.toNamed('/pharmacist/profile'),
+                        ),
+                      ],
+                    )),
               ),
             ],
           ),
@@ -279,7 +305,7 @@ class PharmacistDashboardScreen extends StatelessWidget {
         ),
       ),
       onTap: () {
-        Get.back(); // Close the drawer
+        Get.back();
         onTap();
       },
     );

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/auth_controller.dart';
 import './add_doctor_screen.dart';
-import './doctor_list_screen.dart';
+import '../admin/doctor_list_screen.dart';
 
 class DoctorLoginScreen extends StatelessWidget {
   const DoctorLoginScreen({super.key});
@@ -14,13 +14,17 @@ class DoctorLoginScreen extends StatelessWidget {
     final contactController = TextEditingController();
 
     return Scaffold(
+      backgroundColor: Colors.blue[50],
       appBar: AppBar(
-        title: const Text('Doctor Login'),
-        backgroundColor: Colors.green,
-        elevation: 0,
+        title: const Text(
+          'Doctor Login',
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Colors.blueAccent,
+        elevation: 2,
         actions: [
           IconButton(
-            icon: const Icon(Icons.list),
+            icon: const Icon(Icons.list, color: Colors.white),
             onPressed: () {
               Get.to(() => const DoctorListScreen());
             },
@@ -28,87 +32,122 @@ class DoctorLoginScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: Container(
-        color: Colors.green[50],
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const Text(
-                'Doctor Portal',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.green,
-                ),
-              ),
-              const SizedBox(height: 20),
-              TextField(
-                controller: emailController,
-                decoration: InputDecoration(
-                  labelText: 'Doctor Email',
-                  border: const OutlineInputBorder(),
-                  prefixIcon: const Icon(Icons.email, color: Colors.green),
-                  errorBorder: const OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.red),
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20.0),
+          child: Card(
+            elevation: 8,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.medical_services,
+                      size: 80, color: Colors.blueAccent),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Doctor Portal',
+                    style: TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blueAccent,
+                    ),
                   ),
-                  focusedBorder: const OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.green, width: 2),
-                  ),
-                ),
-                keyboardType: TextInputType.emailAddress,
-                textInputAction: TextInputAction.next,
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: contactController,
-                decoration: InputDecoration(
-                  labelText: 'Contact Number (Password)',
-                  border: const OutlineInputBorder(),
-                  prefixIcon: const Icon(Icons.phone, color: Colors.green),
-                  errorBorder: const OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.red),
-                  ),
-                  focusedBorder: const OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.green, width: 2),
-                  ),
-                ),
-                keyboardType: TextInputType.phone,
-                textInputAction: TextInputAction.done,
-                onSubmitted: (_) {
-                  _handleSignIn(authController, emailController, contactController);
-                },
-              ),
-              const SizedBox(height: 20),
-              Obx(() => authController.isLoading.value
-                  ? const CircularProgressIndicator(color: Colors.green)
-                  : ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
+                  const SizedBox(height: 30),
+
+                  // Email Field
+                  TextField(
+                    controller: emailController,
+                    decoration: InputDecoration(
+                      labelText: 'Doctor Email',
+                      prefixIcon:
+                          const Icon(Icons.email, color: Colors.blueAccent),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      onPressed: () {
-                        _handleSignIn(authController, emailController, contactController);
-                      },
-                      child: const Text('Sign In as Doctor', style: TextStyle(fontSize: 16)),
-                    )),
-              const SizedBox(height: 16),
-              TextButton(
-                onPressed: () {
-                  Get.to(() => const AddDoctorScreen());
-                },
-                child: const Text(
-                  'Create Doctor Account',
-                  style: TextStyle(color: Colors.green, fontSize: 16),
-                ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide:
+                            const BorderSide(color: Colors.blueAccent, width: 2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    keyboardType: TextInputType.emailAddress,
+                    textInputAction: TextInputAction.next,
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Contact / Password Field
+                  TextField(
+                    controller: contactController,
+                    decoration: InputDecoration(
+                      labelText: 'Contact Number (Password)',
+                      prefixIcon:
+                          const Icon(Icons.phone, color: Colors.blueAccent),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide:
+                            const BorderSide(color: Colors.blueAccent, width: 2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    keyboardType: TextInputType.phone,
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (_) {
+                      _handleSignIn(
+                          authController, emailController, contactController);
+                    },
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Login Button
+                  Obx(() => authController.isLoading.value
+                      ? const CircularProgressIndicator(
+                          color: Colors.blueAccent,
+                        )
+                      : SizedBox(
+                          width: double.infinity,
+                          height: 50,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blueAccent,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            onPressed: () {
+                              _handleSignIn(authController, emailController,
+                                  contactController);
+                            },
+                            child: const Text(
+                              'Sign In as Doctor',
+                              style: TextStyle(fontSize: 18),
+                            ),
+                          ),
+                        )),
+                  const SizedBox(height: 16),
+
+                  // Create Account
+                  TextButton(
+                    onPressed: () {
+                      Get.to(() =>  AddDoctorScreen());
+                    },
+                    child: const Text(
+                      'Create Doctor Account',
+                      style: TextStyle(
+                          color: Colors.blueAccent,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -123,8 +162,9 @@ class DoctorLoginScreen extends StatelessWidget {
     final email = emailController.text.trim();
     final contact = contactController.text.trim();
 
-    // Validate inputs
-    if (email.isEmpty || !RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
+    // Email validation
+    if (email.isEmpty ||
+        !RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
       Get.snackbar(
         'Error',
         'Please enter a valid email address',
@@ -134,17 +174,9 @@ class DoctorLoginScreen extends StatelessWidget {
       );
       return;
     }
-    if (contact.isEmpty || !RegExp(r'^\+?[1-9]\d{1,14}$').hasMatch(contact)) {
-      Get.snackbar(
-        'Error',
-        'Please enter a valid contact number (used as password)',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-      return;
-    }
-    if (contact.length < 6) {
+
+    // Contact validation
+    if (contact.isEmpty || contact.length < 6) {
       Get.snackbar(
         'Error',
         'Contact number must be at least 6 digits',

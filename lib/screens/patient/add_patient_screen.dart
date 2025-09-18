@@ -1,93 +1,40 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:hsmproject/controllers/auth_controller.dart';
+import 'package:hsmproject/controllers/patients/patient_controller.dart';
 
 class AddPatientScreen extends StatelessWidget {
   const AddPatientScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final AuthController authController = Get.find<AuthController>();
+    final PatientController patientController = Get.find<PatientController>();
     final nameController = TextEditingController();
     final ageController = TextEditingController();
     final conditionController = TextEditingController();
     final emailController = TextEditingController();
     final contactNumberController = TextEditingController();
-    final RxBool isLoading = false.obs; // Add loading state
 
     Future<void> addPatient() async {
       try {
-        // Basic validation
-        if (nameController.text.trim().isEmpty) {
-          Get.snackbar('Error', 'Please enter patient name');
-          return;
-        }
-        if (emailController.text.trim().isEmpty ||
-            !RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(emailController.text.trim())) {
-          Get.snackbar('Error', 'Please enter a valid email');
-          return;
-        }
-        if (contactNumberController.text.trim().length < 10) {
-          Get.snackbar('Error', 'Please enter a valid contact number (minimum 10 characters)');
-          return;
-        }
+        
+
+        final name = nameController.text.trim();
         final age = int.tryParse(ageController.text.trim()) ?? 0;
-        if (age <= 0) {
-          Get.snackbar('Error', 'Please enter a valid age');
-          return;
-        }
+        final condition = conditionController.text.trim();
+        final email = emailController.text.trim().toLowerCase();
+        final contactNumber = contactNumberController.text.trim();
 
-        // Check if current user is admin
-        // User? currentUser = FirebaseAuth.instance.currentUser;
-        // if (currentUser == null || currentUser.email != 'jayjadhav2507@gmail.com') {
-        //   Get.snackbar('Error', 'Only admins can add patients');
-        //   return;
-        // }
-
-        // isLoading.value = true;
-
-        // Create user in Firebase Authentication
-        UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email: emailController.text.trim().toLowerCase(),
-          password: contactNumberController.text.trim(), // Use contact number as password
+        await patientController.registerPatient(
+          email: email,
+          contactNumber: contactNumber,
+          name: name,
+          age: age,
+          condition: condition,
         );
-
-        // Store patient data in Firestore
-        await FirebaseFirestore.instance.collection('patients').doc(userCredential.user!.uid).set({
-          'name': nameController.text.trim(),
-          'age': age,
-          'condition': conditionController.text.trim(),
-          'email': emailController.text.trim().toLowerCase(),
-          'contact_number': contactNumberController.text.trim(),
-          'role': 'patient', // Add role for compatibility with role-based system
-          'createdAt': FieldValue.serverTimestamp(),
-        });
-
-        Get.back();
-        Get.snackbar('Success', 'Patient added successfully');
-      } on FirebaseAuthException catch (e) {
-        String errorMessage;
-        switch (e.code) {
-          case 'email-already-in-use':
-            errorMessage = 'The email address is already in use.';
-            break;
-          case 'invalid-email':
-            errorMessage = 'The email address is not valid.';
-            break;
-          case 'weak-password':
-            errorMessage = 'The contact number is too weak. Please use at least 10 characters.';
-            break;
-          case 'operation-not-allowed':
-            errorMessage = 'Email/password accounts are not enabled.';
-            break;
-          default:
-            errorMessage = 'Failed to create user: ${e.message}';
-        }
-        Get.snackbar('Error', errorMessage);
       } catch (e) {
         Get.snackbar('Error', 'An unexpected error occurred: ${e.toString()}');
-      } finally {
-        isLoading.value = false;
       }
     }
 
@@ -137,8 +84,8 @@ class AddPatientScreen extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             Obx(() => ElevatedButton(
-                  onPressed: isLoading.value ? null : addPatient,
-                  child: isLoading.value
+                  onPressed: patientController.isLoading.value ? null : addPatient,
+                  child: patientController.isLoading.value
                       ? const CircularProgressIndicator()
                       : const Text('Add Patient'),
                 )),

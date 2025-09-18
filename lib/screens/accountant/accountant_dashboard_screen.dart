@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '/../controllers/auth_controller.dart';
-import '../../controllers/accountant_controller.dart';
+import 'package:hsmproject/controllers/accountant/accountant_dashboard_controller.dart';
+import 'package:hsmproject/controllers/auth_controller.dart';
 
 class AccountantDashboardScreen extends StatelessWidget {
   const AccountantDashboardScreen({super.key});
@@ -10,7 +10,7 @@ class AccountantDashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AuthController authController = Get.find<AuthController>();
-    final AccountantController accountantController = Get.put(AccountantController());
+    final AccountantDashboardController accountantController = Get.put(AccountantDashboardController());
 
     // Define a professional color scheme
     const primaryColor = Color(0xFF2A6EBB); // Calming blue
@@ -68,7 +68,7 @@ class AccountantDashboardScreen extends StatelessWidget {
                 title: 'Manage Invoices',
                 onTap: () {
                   Get.back();
-                  Get.toNamed('/invoices');
+                  Get.toNamed('/accountant/invoice');
                 },
               ),
               _buildDrawerItem(
@@ -76,7 +76,7 @@ class AccountantDashboardScreen extends StatelessWidget {
                 title: 'Manage Payments',
                 onTap: () {
                   Get.back();
-                  Get.toNamed('/payments');
+                  Get.toNamed('/accountant/payments');
                 },
               ),
               _buildDrawerItem(
@@ -84,7 +84,7 @@ class AccountantDashboardScreen extends StatelessWidget {
                 title: 'Payrolls',
                 onTap: () {
                   Get.back();
-                  Get.toNamed('/payrolls');
+                  Get.toNamed('/accountant/payrolls');
                 },
               ),
               _buildDrawerItem(
@@ -92,7 +92,7 @@ class AccountantDashboardScreen extends StatelessWidget {
                 title: 'Bills',
                 onTap: () {
                   Get.back();
-                  Get.toNamed('/bills');
+                  Get.toNamed('/accountant/bill');
                 },
               ),
               _buildDrawerItem(
@@ -100,7 +100,15 @@ class AccountantDashboardScreen extends StatelessWidget {
                 title: 'Manage Accounts',
                 onTap: () {
                   Get.back();
-                  Get.toNamed('/accounts');
+                  Get.toNamed('/accountant/accounts');
+                },
+              ),
+              _buildDrawerItem(
+                icon: Icons.person,
+                title: 'Manage Accountants',
+                onTap: () {
+                  Get.back();
+                  Get.toNamed('/accountant/accountants');
                 },
               ),
               _buildDrawerItem(
@@ -202,7 +210,7 @@ class AccountantDashboardScreen extends StatelessWidget {
                     icon: Icons.receipt_long,
                     title: 'Manage Invoices',
                     onTap: () {
-                      Get.toNamed('/invoices');
+                      Get.toNamed('/accountant/invoice');
                     },
                     color: primaryColor,
                   ),
@@ -211,7 +219,7 @@ class AccountantDashboardScreen extends StatelessWidget {
                     icon: Icons.payment,
                     title: 'Manage Payments',
                     onTap: () {
-                      Get.toNamed('/payments');
+                      Get.toNamed('/accountant/payments');
                     },
                     color: accentColor,
                   ),
@@ -220,7 +228,7 @@ class AccountantDashboardScreen extends StatelessWidget {
                     icon: Icons.account_balance_wallet,
                     title: 'Payrolls',
                     onTap: () {
-                      Get.toNamed('/payrolls');
+                      Get.toNamed('/accountant/payrolls');
                     },
                     color: primaryColor,
                   ),
@@ -229,7 +237,7 @@ class AccountantDashboardScreen extends StatelessWidget {
                     icon: Icons.description,
                     title: 'Bills',
                     onTap: () {
-                      Get.toNamed('/bills');
+                      Get.toNamed('/accountant/bill');
                     },
                     color: accentColor,
                   ),
@@ -238,9 +246,18 @@ class AccountantDashboardScreen extends StatelessWidget {
                     icon: Icons.account_balance,
                     title: 'Manage Accounts',
                     onTap: () {
-                      Get.toNamed('/accounts');
+                      Get.toNamed('/accountant/accounts');
                     },
                     color: primaryColor,
+                  ),
+                  _buildDashboardTile(
+                    context,
+                    icon: Icons.person,
+                    title: 'Manage Accountants',
+                    onTap: () {
+                      Get.toNamed('/accountant/accountants');
+                    },
+                    color: accentColor,
                   ),
                 ],
               ),

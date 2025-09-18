@@ -1,54 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-// Centralized theme management
 class AppTheme {
-  static const Color buttonColor = Color(0xFF6A1B9A); // Dark purple
+  static const Color primaryColor = Colors.blueAccent;
 
   static final ThemeData lightTheme = ThemeData(
-    primaryColor: Color(0xFF2196F3),
-    scaffoldBackgroundColor: Colors.white,
+    primaryColor: primaryColor,
+    scaffoldBackgroundColor: Colors.blue[50], // 🔹 Light blue background
     textTheme: TextTheme(
-      headlineSmall: TextStyle(
+      headlineSmall: const TextStyle(
         fontSize: 28,
         fontWeight: FontWeight.bold,
-        color: Colors.blueGrey[900],
-        letterSpacing: 1.2,
+        color: Colors.blueAccent, // Blue heading
+        letterSpacing: 1.1,
       ),
-      bodyLarge: TextStyle(
+      bodyLarge: const TextStyle(
         fontSize: 18,
-        fontWeight: FontWeight.w500,
-        color: Colors.white,
+        fontWeight: FontWeight.w600,
+        color: Colors.blueAccent,
       ),
-      bodyMedium: TextStyle(
+      bodyMedium: const TextStyle(
         fontSize: 16,
-        fontWeight: FontWeight.w400,
-        color: Colors.blueGrey[900],
+        fontWeight: FontWeight.w500,
+        color: Colors.blueAccent,
       ),
-    ),
-    elevatedButtonTheme: ElevatedButtonThemeData(
-      style: ElevatedButton.styleFrom(
-        foregroundColor: Colors.white,
-        backgroundColor: buttonColor,
-        padding: EdgeInsets.symmetric(horizontal: 40, vertical: 20),
-        textStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        elevation: 8,
-        shadowColor: Colors.black38,
-      ),
-    ),
-    inputDecorationTheme: InputDecorationTheme(
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: Colors.blueGrey[300]!),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: Color(0xFF2196F3), width: 2),
-      ),
-      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
     ),
   );
 }
@@ -63,17 +38,17 @@ class RoleSelectionScreen extends StatefulWidget {
 class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
   String? _selectedRole;
 
-  final List<Map<String, String>> _roles = [
-    {'label': 'Doctor', 'route': '/doctor-login'},
-    {'label': 'Admin', 'route': '/admin-login'},
-    {'label': 'Receptionist', 'route': '/receptionist-login'},
-    {'label': 'Accountant', 'route': '/accountant-login'},
-    {'label': 'Laboratorist', 'route': '/laboratorist-login'},
-    {'label': 'Pharmacist', 'route': '/pharmacist-login'},
-    {'label': 'Nurse', 'route': '/nurse-login'},
-    {'label': 'Patient', 'route': '/patient-login'},
-    {'label': 'Case Manager', 'route': '/case_manager_login'},
-  ];
+ final List<Map<String, dynamic>> _roles = [
+  {'label': 'Admin', 'route': '/admin-login', 'icon': Icons.admin_panel_settings},
+  {'label': 'Doctor', 'route': '/doctor-login', 'icon': Icons.local_hospital},
+  {'label': 'Nurse', 'route': '/nurse-login', 'icon': Icons.medical_services},
+  {'label': 'Receptionist', 'route': '/receptionist-login', 'icon': Icons.support_agent},
+  {'label': 'Accountant', 'route': '/accountant_login', 'icon': Icons.calculate},
+  {'label': 'Pharmacist', 'route': '/pharmacist_login', 'icon': Icons.local_pharmacy},
+  {'label': 'Laboratorist', 'route': '/laboratorist-login', 'icon': Icons.biotech},
+  {'label': 'Case Manager', 'route': '/case_manager_login', 'icon': Icons.people},
+  {'label': 'Patient', 'route': '/patient-login', 'icon': Icons.person},
+];
 
   void _navigateToRoleScreen() {
     if (_selectedRole == null) {
@@ -84,22 +59,19 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
     }
 
     final selectedRoute = _roles.firstWhere(
-      (role) => role['label']! == _selectedRole!, // Use ! since we checked _selectedRole is non-null
-      orElse: () => {'route': ''}, // Return empty string instead of null
+      (role) => role['label'] == _selectedRole!,
+      orElse: () => {'route': ''},
     )['route'];
 
     if (selectedRoute != null && selectedRoute.isNotEmpty) {
       try {
         Get.toNamed(selectedRoute);
-        debugPrint('Navigating to $selectedRoute');
       } catch (e) {
-        debugPrint('Navigation error: $e');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error navigating to $_selectedRole login')),
         );
       }
     } else {
-      debugPrint('No route found for role: $_selectedRole');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Invalid role selected')),
       );
@@ -111,82 +83,106 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
     return Theme(
       data: AppTheme.lightTheme,
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.blue[50], // 🔹 Soft hospital-like background
         body: SafeArea(
           child: Column(
             children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 40.0),
-                child: Text(
-                  'Select Your Role',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        shadows: [
-                          Shadow(
-                            blurRadius: 8.0,
-                            color: Colors.black26,
-                            offset: Offset(2.0, 2.0),
+              const SizedBox(height: 50),
+              Text(
+  'Choose Your Portal',
+  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+        fontWeight: FontWeight.w700,
+        letterSpacing: 1.2,
+      ),
+  textAlign: TextAlign.center,
+),
+              const SizedBox(height: 40),
+              Expanded(
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 360),
+                    child: Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.white, // White card on light blue
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: 8,
+                            offset: const Offset(0, 5),
                           ),
                         ],
                       ),
-                ),
-              ),
-              Expanded(
-                child: Center(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 300),
-                          child: Card(
-                            elevation: 4,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          DropdownButtonFormField<String>(
+                            value: _selectedRole,
+                            dropdownColor: Colors.white,
+                            hint: Text(
+                              'Choose a role',
+                              style: Theme.of(context).textTheme.bodyMedium,
                             ),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                              child: DropdownButtonFormField<String>(
-                                value: _selectedRole,
-                                hint: Text(
-                                  'Choose a role',
-                                  style: Theme.of(context).textTheme.bodyMedium,
+                            items: _roles.map((role) {
+                              return DropdownMenuItem<String>(
+                                value: role['label'],
+                                child: Row(
+                                  children: [
+                                    Icon(role['icon'], color: Colors.blueAccent),
+                                    const SizedBox(width: 12),
+                                    Text(role['label'],
+                                        style: Theme.of(context).textTheme.bodyMedium),
+                                  ],
                                 ),
-                                items: _roles.map((role) {
-                                  return DropdownMenuItem<String>(
-                                    value: role['label']!, // Use ! since label is guaranteed non-null
-                                    child: Text(
-                                      role['label']!, // Use ! since label is guaranteed non-null
-                                      style: Theme.of(context).textTheme.bodyMedium,
-                                    ),
-                                  );
-                                }).toList(),
-                                onChanged: (value) {
-                                  setState(() {
-                                    _selectedRole = value;
-                                  });
-                                },
-                                decoration: const InputDecoration(
-                                  border: InputBorder.none,
+                              );
+                            }).toList(),
+                            onChanged: (value) {
+                              setState(() {
+                                _selectedRole = value;
+                              });
+                            },
+                            decoration: InputDecoration(
+                              filled: true,
+                              fillColor: Colors.blue[50],
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                                borderSide: BorderSide.none,
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            ),
+                            isExpanded: true,
+                          ),
+                          const SizedBox(height: 30),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 55,
+                            child: ElevatedButton(
+                              onPressed: _navigateToRoleScreen,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blueAccent,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
                                 ),
-                                isExpanded: true,
+                                elevation: 4,
+                              ),
+                              child: const Text(
+                                'Proceed',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 20),
-                        ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 300),
-                          child: ElevatedButton(
-                            onPressed: _navigateToRoleScreen,
-                            child: const Text('Proceed'),
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
+              const SizedBox(height: 50),
             ],
           ),
         ),

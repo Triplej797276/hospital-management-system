@@ -5,18 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
 
-class PatientDashboardController extends GetxController {
-  var selectedIndex = 0.obs;
-  final user = FirebaseAuth.instance.currentUser;
-
-  void changeSection(int index) {
-    selectedIndex.value = index;
-    FirebaseAnalytics.instance.logEvent(
-      name: 'section_changed',
-      parameters: {'section_index': index, 'patient_id': user!.uid},
-    );
-  }
-}
+import '../../controllers/patients/patient_dashboard_controller.dart';
 
 class PatientDashboardScreen extends StatelessWidget {
   final controller = Get.put(PatientDashboardController());
@@ -463,7 +452,7 @@ class AdminOperationHistorySection extends StatelessWidget {
                 ),
                 child: ListTile(
                   title: Text('Operation: ${operation['type'] ?? 'N/A'}'),
-                  subtitle: Text('Date: ${operation['date'] ?? 'System: N/A'}'),
+                  subtitle: Text('Date: ${operation['date'] ?? 'N/A'}'),
                 ),
               ),
             );
